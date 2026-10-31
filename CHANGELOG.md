@@ -1,0 +1,49 @@
+# GridSight change log
+
+Newest first. One line per change. Artifact: https://claude.ai/artifact/PZNH8ccqmgMXbZZmybJqXS
+
+## Site at a glance
+
+- **App:** `app/` (React, Vite, Tailwind; copy of the Site Studio starter). Tabs: Map (landing), Site, Demand, Growth and money, Sun and weather, Validation, Data sharing, Method; headline and 5-step strip on every tab; compact village bar after Site. Light/Dark toggle (follows system, remembered).
+- **Data:** `app/data/*.json`, one per sample village (Gbamu Gbamu NG, Kychom SL, Benichab MR, Talek KE, Kitobo UG, Bulongwa TZ), 1 km radius, made by `pipeline/gridsight_fetch.py` (`pipeline/fetch_samples.sh` rebuilds all).
+- **Demand engine (main model):** Fereshteh's `forecast/demand_forecast.py`, run on every village by `pipeline/run_engine.py` into `app/data/engine/*.json`; read by `app/components/engine.ts`.
+- **Building-level model (second opinion):** `app/components/model.ts` (classification, parameters, Monte Carlo range, drivers, growth, sizing). Sources in `app/components/sources.ts`.
+- **Held-out test:** `pipeline/holdout_tags.py` writes `app/data/holdout/tags.json` (OSM-tagged buildings from other villages) for the Validation tab.
+- **Pitch kit:** `PITCH.md` (3-minute script), `IMPACT.md` (one-page impact estimate).
+- **Fereshteh's toolkit:** `forecast/` (village_landuse.py maps a village, demand_forecast.py gives a 5-year forecast with ranges, HOMER 8760 files, sizing and tariff risk, validate command; ranges in assumptions.yaml). Benichab, Mauritania example in `forecast/examples/`.
+- **Measured sites:** `pipeline/measured_sites.csv` (nearby calibration within 1,000 miles; add partner or Zenodo rows here).
+- **Publish:** `./publish.sh`, then publish `app/dist/page.html` with the files in `app/dist/assets/`.
+
+## 2026-10-31
+
+- **WorldCover, sizing basis, pitch refresh:** `pipeline/landcover.py` (ESA WorldCover 2021, 10 m) adds land cover within 1 and 5 km (Site tab, context only; Meta Relative Wealth Index is not reachable here). `run_engine.py` sizes the P50 system both on the dull-season month (used) and on the yearly average, each run through 10 weather years (Growth and money: "Size for the dull season or the yearly average?"). PITCH.md and IMPACT.md rewritten with current numbers (weather, nearby meters, two household counts, staging at Gbamu Gbamu matching the built 85 kWp at year 2).
+
+- **Two household counts side by side:** `pipeline/meta_population.py` reads Meta's HRSL population (30 m, CC BY 4.0, AWS) within each village radius; `run_engine.py` runs the engine a second time from that population (`by_population`). Demand tab: "Two ways to count households" (households, customers, energy, peak and P50 system from roofs and from Meta); Map panel line with both counts. Roofs stay the main count.
+
+- **Fereshteh's clear-sky PV model:** `forecast/clearsky_pv.py` and `test_clearsky.py` added (her toolkit update; calibration hook kept in demand_forecast.py). New `pipeline/pv_hourly.py` runs it for every village with altitude from Copernicus 30 m elevation and NASA POWER temperatures, and scales each month by measured sunlight against clear sky and by dust on panels (agrees with weather.py within 2 to 10%). `run_engine.py` lays the year-5 hourly demand over the P50 system's typical day per month (battery need against usable size). Sun and weather tab: "A typical day in each month", 12 small charts.
+
+- **Sharper satellite pictures:** built from Sentinel-2 bands 4, 3, 2 (not the preview TCI), median of the 2 or 3 clearest recent pictures, one haze floor for all colours, natural saturation, 960 px; the picture fades as you zoom past its 10 m detail (Map flat and 3D, Site map) so the footprints take over. Checked Maxar Open Data (sub-metre, CC BY-NC, disaster events only): no event covers the six villages.
+
+- **Sun and weather:** `pipeline/weather.py` pulls 10 years of daily NASA POWER data per village (sunlight, clear-sky sunlight, cloud, dust and haze AOD, rain, temperature; AWS open data) and five CMIP6 models (SSP2-4.5, 2027 to 2036 against 2015 to 2024; Google Cloud). Solar output per kWp includes system, heat and dust-on-panel losses (washed by rain or monthly cleaning). Fed into the engine: monthly temperature, design sun hours (third-worst month), performance ratio, day-to-day swing, battery days. `run_engine.py` runs each P25 to P90 system day by day through the 10 weather years (and the outlook) for unserved demand and short days. New tab Sun and weather; weather line on the Map panel; NASA POWER and CMIP6 in Sources.
+
+- **Satellite pictures:** `pipeline/satellite.py` picks the most recent cloud-free Copernicus Sentinel-2 picture (10 m, AWS open data, checked cloud-free over the village itself) and cuts it to each village (`app/data/imagery/`, Feb to Oct 2026). Shown under the Map view (Flat and 3D, Satellite switch) and the Site map, with date and Copernicus credit; inlined into the build. Google satellite imagery is not open, so not used.
+
+- **Map view (UI batches 2 and 3):** 3D buildings (three.js, footprints extruded to typical heights per class, orbit and tilt, callouts follow the camera; Flat/3D switch, 3D by default on wide screens); building outlines now stored in site files (`outlines`, decimetres). Left panel: year picker 1 to 5, donut of who uses the power, gauge of demand against what the chosen system makes (P10 to P90 band), size picker P25 to P90 with cost, brownout, idle and cost per kWh.
+
+- **Map view (UI batch 1):** new first tab, full screen map of the village (roads, power lines, buildings by class, mapped plant), left summary panel (year 1 and 5 demand, who uses the power, peak, customers, P50 system, cost, brownout and cost-recovery odds, grid and nearby meters), village rail on the right with year-5 demand, callouts on homes, shops, the likeliest clinic or school and the solar plant (`components/MapView.tsx`, `--map-*` tokens). Phone: map on top, compact callouts, rail and panel below.
+
+- **Nearby measured load and old pictures:** buildings now come from Overture's merged Google, Microsoft and OpenStreetMap footprints (plus Google points the others miss, 6 m duplicate check), with source and record year per building and Google's own count kept as `coverage`. Homes built since the data date are added at household growth (3%, Mauritania 3.1%). New `pipeline/measured_sites.csv` (Sitolo MW, PowerGen TZ, Rwanda rural, North Central NG, each sourced and weighted); `run_engine.py` pulls each village toward metered sites within 1,000 miles through an opt-in `calibration.usage_multiplier` hook added to the engine (tests still pass). Site tab: Footprint sources and dates; Demand tab: Measured load within 1,000 miles. Pitch and impact numbers updated.
+
+- **Sources:** every modelled number on Site, Demand, Growth and money and Validation carries a "Source:" line (`components/refs.tsx`, `Cite`); each driver shows its source; Method lists every reference grouped by what it feeds, with "assumption" in amber where no published source exists. `sources.ts` replaced by `refs.tsx`.
+
+- **Sharing:** `GridSight.html`, the whole dashboard in one file that opens in any browser, offline.
+
+- **Engine and story (F1, F2, UI A):** Fereshteh's engine now drives Demand (answer sentence, year 1 and 5 ranges, use per household against Rwanda and Malawi, average day, who uses the energy, drivers for year 1 or 5, what the map gave the model, second opinion from the building model), Growth and money (growth band with design capacity, Faza appliance path, P25 to P90 design table with brownout, idle, cost and cost-recovery odds, tariff table, regional tariffs) and Validation (85 kWp plant inside the year-3 range). Benichab added. Headline, step strip, Amina intro, compact village bar, Next buttons, grid-nearby warning, Peters et al. and Antonanzas-Torres et al. in Sources, Method rewritten. PITCH.md and IMPACT.md rewritten as one team story.
+
+- **Toolkit:** added Fereshteh's mini-grid demand toolkit as `forecast/` (unchanged). All 11 forecast tests pass here and the Benichab run reproduces her numbers (year 5 peak 17.6 kW, load factor 28%).
+
+- **Validation:** held-out class check now uses 2,256 OSM-tagged buildings from 84 villages in all five countries (60% single-building agreement; shops, schools and clinics under-counted), with a plain "what we learned" line.
+
+- **Batch C, D and E (first pass):** Growth and money tab (5-year growth band, appliance path, sizing for P50/P70/P90 in year 1/3/5, brownout and oversize risk, tariff at each point, tariff against demand curve); Validation tab (scoring plan, held-out class check, Gbamu Gbamu 85 kWp plant inside our about 67 to 131 kWp range); Data sharing tab (data trust proposal and monthly site schema); PITCH.md and IMPACT.md. Model: medians as most likely case, peakier evening home load (homes-only load factor about 20%), fewer machines.
+
+- **Batch A+B:** data access check (Open Buildings via GCS and Overture Maps via S3 work; Overpass, OSM tiles, VIIRS, GridFinder, HDX blocked from the cloud box), fetch pipeline, five real villages, Site tab (map, class counts with ranges, building table, data sources), Demand tab (P10/P50/P90 energy, peak, use per customer, load factor, daily profile, who uses the power, drivers), Method tab (steps, input ranges, sources), first publish.
