@@ -1,10 +1,8 @@
-# GridSight
+# Kesho
 
 Mini-grid demand from public data, for the Global Energy Hackathon 2026, Brief 03 ("Predict mini-grid demand before building").
 
-**Open the app:** https://saiskarri-svg.github.io/GridSight/ (GitHub Pages) · or download `index.html` and open it in any browser; it works offline.
-
-Team: Sai (map, data pipeline, dashboard) and Fereshteh (demand engine, clear-sky solar model). The hackathon brief itself is not included; see hackathon.anneru.com.
+Live prototype: https://claude.ai/artifact/PZNH8ccqmgMXbZZmybJqXS
 
 ## What is here
 
@@ -25,9 +23,8 @@ Team: Sai (map, data pipeline, dashboard) and Fereshteh (demand engine, clear-sk
 | `pipeline/weather.py` | 10 years of daily NASA POWER weather and five CMIP6 models per village; solar output with cloud, heat and dust losses |
 | `pipeline/satellite.py` | Latest cloud-free Sentinel-2 picture for each village (open data, no login) |
 | `pipeline/measured_sites.csv` | Published metered sites used to calibrate villages within 1,000 miles |
-| `index.html` | The whole dashboard in one file (same as `GridSight.html`), served by GitHub Pages |
 | `publish.sh` | Build and write `app/dist/page.html` for publishing |
-| `GridSight.html` | The whole dashboard in one file: open it in any browser, works offline, safe to email |
+| `Kesho.html` | The whole dashboard in one file: open it in any browser, works offline, safe to email |
 | `PITCH.md`, `IMPACT.md` | 3-minute pitch and one-page impact estimate |
 | `REPORT.md`, `CHANGELOG.md` | Build notes and decisions |
 
